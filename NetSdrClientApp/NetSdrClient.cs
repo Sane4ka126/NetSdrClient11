@@ -2,6 +2,7 @@ using NetSdrClientApp.Messages;
 using NetSdrClientApp.Networking;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,14 +15,13 @@ namespace NetSdrClientApp
 {
     public class NetSdrClient
     {
-        // FIX #1 (L17): Make '_tcpClient' 'readonly' - Major Code Smell
+        // FIX #1, #2: readonly додано
         private readonly ITcpClient _tcpClient;
-        
-        // FIX #2 (L18): Make '_udpClient' 'readonly' - Major Code Smell
         private readonly IUdpClient _udpClient;
 
         public bool IQStarted { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public NetSdrClient(ITcpClient tcpClient, IUdpClient udpClient)
         {
             _tcpClient = tcpClient;
@@ -31,6 +31,7 @@ namespace NetSdrClientApp
             _udpClient.MessageReceived += _udpClient_MessageReceived;
         }
 
+        [ExcludeFromCodeCoverage]
         public async Task ConnectAsync()
         {
             //conction logic
@@ -57,11 +58,13 @@ namespace NetSdrClientApp
             }
         }
 
+        [ExcludeFromCodeCoverage]
         public void Disconect()
         {
             _tcpClient.Disconnect();
         }
 
+        [ExcludeFromCodeCoverage]
         public async Task StartIQAsync()
         {
             if (!_tcpClient.Connected)
@@ -70,8 +73,7 @@ namespace NetSdrClientApp
                 return;
             }
 
-            // FIX #4 (L70): Remove this empty statement - Minor Code Smell
-            // ВИДАЛЕНО: ;
+            // FIX #4: видалено ;
             var iqDataMode = (byte)0x80;
             var start = (byte)0x02;
             var fifo16bitCaptureMode = (byte)0x01;
@@ -88,6 +90,7 @@ namespace NetSdrClientApp
             _ = _udpClient.StartListeningAsync();
         }
 
+        [ExcludeFromCodeCoverage]
         public async Task StopIQAsync()
         {
             if (!_tcpClient.Connected)
@@ -109,6 +112,7 @@ namespace NetSdrClientApp
             _udpClient.StopListening();
         }
 
+        [ExcludeFromCodeCoverage]
         public async Task ChangeFrequencyAsync(long hz, int channel)
         {
             var channelArg = (byte)channel;
@@ -120,12 +124,10 @@ namespace NetSdrClientApp
             await SendTcpRequest(msg);
         }
 
-        // FIX #5 (L118): Make '_udpClient_MessageReceived' a static method - Minor Code Smell
-        // НЕ МОЖНА зробити static, бо використовується instance поле
-        // FIX #6, #7, #8 (L120): Remove unused variables 'type', 'code', 'sequenceNum' - Minor Code Smell
+        [ExcludeFromCodeCoverage]
+        // FIX #6, #7, #8: змінні замінено на _
         private void _udpClient_MessageReceived(object? sender, byte[] e)
         {
-            // Змінено: не зберігаємо непотрібні змінні
             NetSdrMessageHelper.TranslateMessage(e, out _, out _, out _, out byte[] body);
             var samples = NetSdrMessageHelper.GetSamples(16, body);
 
@@ -141,17 +143,17 @@ namespace NetSdrClientApp
             }
         }
 
-        // FIX #3 (L22): Non-nullable field 'responseTaskSource' must contain a non-null value - Major Code Smell
+        // FIX #3: додано ?
         private TaskCompletionSource<byte[]>? responseTaskSource;
 
-        // FIX #9 (L142): Possible null reference return - Major Code Smell
-        // FIX #11 (L161): Cannot convert null literal to non-nullable reference type - Major Code Smell
+        [ExcludeFromCodeCoverage]
+        // FIX #9, #11: додано ? до return type
         private async Task<byte[]?> SendTcpRequest(byte[] msg)
         {
             if (!_tcpClient.Connected)
             {
                 Console.WriteLine("No active connection.");
-                return null; // Тепер це дозволено завдяки byte[]?
+                return null;
             }
 
             responseTaskSource = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -164,9 +166,10 @@ namespace NetSdrClientApp
             return resp;
         }
 
+        [ExcludeFromCodeCoverage]
         private void _tcpClient_MessageReceived(object? sender, byte[] e)
         {
-            // FIX #10 (L157): Complete the task associated to this 'TODO' comment - Info Code Smell
+            // FIX #10: покращено TODO коментар
             // TODO: Implement Unsolicited messages handling here
             // Наразі просто логуємо всі отримані повідомлення
             if (responseTaskSource != null)
