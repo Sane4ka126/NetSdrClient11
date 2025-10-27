@@ -158,7 +158,7 @@ namespace NetSdrClientApp
             try
             {
                 NetSdrMessageHelper.TranslateMessage(e, out _, out _, out _, out byte[] body);
-                var samples = NetSdrMessageHelper.GetSamples(16, body);
+                var samples = NetSdrMessageHelper.GetSamples(16, body).ToArray();
 
                 Console.WriteLine($"Samples received: {string.Join(" ", body.Select(b => Convert.ToString(b, toBase: 16)))}");
 
