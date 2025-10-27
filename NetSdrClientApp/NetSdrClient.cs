@@ -18,6 +18,7 @@ namespace NetSdrClientApp
         private FileStream? _fileStream;
         private BinaryWriter? _binaryWriter;
         private readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
+        private bool _disposed = false;
         
         public bool IQStarted { get; set; }
         
@@ -215,7 +216,7 @@ namespace NetSdrClientApp
                     
                     if (completedTask == responseTask)
                     {
-                        cts.Cancel();
+                        await cts.CancelAsync();
                         return await responseTask;
                     }
                     else
@@ -254,19 +255,33 @@ namespace NetSdrClientApp
             }
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _tcpClient.MessageReceived -= TcpClientMessageReceived;
+                    _udpClient.MessageReceived -= UdpClientMessageReceived;
+                    
+                    CloseFileStream();
+                    _fileLock?.Dispose();
+                    
+                    if (_tcpClient is IDisposable tcpDisposable)
+                        tcpDisposable.Dispose();
+                        
+                    if (_udpClient is IDisposable udpDisposable)
+                        udpDisposable.Dispose();
+                }
+
+                _disposed = true;
+            }
+        }
+
         public void Dispose()
         {
-            _tcpClient.MessageReceived -= TcpClientMessageReceived;
-            _udpClient.MessageReceived -= UdpClientMessageReceived;
-            
-            CloseFileStream();
-            _fileLock?.Dispose();
-            
-            if (_tcpClient is IDisposable tcpDisposable)
-                tcpDisposable.Dispose();
-                
-            if (_udpClient is IDisposable udpDisposable)
-                udpDisposable.Dispose();
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
