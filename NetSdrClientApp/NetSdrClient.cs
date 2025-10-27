@@ -65,6 +65,12 @@ namespace NetSdrClientApp
             CloseFileStream();
         }
 
+        [Obsolete("Method name contains typo. Use Disconnect() instead.")]
+        public void Disconect()
+        {
+            Disconnect();
+        }
+
         public async Task StartIQAsync()
         {
             if (!_tcpClient.Connected)
