@@ -13,14 +13,13 @@ namespace NetSdrClientApp
 {
     public class NetSdrClient
     {
-        // Рішення S2933: Поля readonly
+        
         private readonly ITcpClient _tcpClient;
         private readonly IUdpClient _udpClient;
         
         public bool IQStarted { get; set; }
 
-        // Рішення CS8618: Поле зроблене nullable (додано '?'),
-        // оскільки воно ініціалізується лише в SendTcpRequest, а не в конструкторі.
+   
         private TaskCompletionSource<byte[]>? responseTaskSource; 
 
         public NetSdrClient(ITcpClient tcpClient, IUdpClient udpClient)
@@ -120,19 +119,19 @@ namespace NetSdrClientApp
 
         private void _udpClient_MessageReceived(object? sender, byte[] e)
         {
-            // Рішення S1481: Замінено невикористані out параметри (type, code, sequenceNum) на discard (_).
+            
             NetSdrMessageHelper.TranslateMessage(e, out _, out _, out _, out byte[] body);
             var samples = NetSdrMessageHelper.GetSamples(16, body);
 
             Console.WriteLine($"Samples recieved: " + body.Select(b => Convert.ToString(b, toBase: 16)).Aggregate((l, r) => $"{l} {r}"));
 
-            // Припускаючи, що FileStream та BinaryWriter доступні (наприклад, це консольний або десктопний додаток)
+         
             using (FileStream fs = new FileStream("samples.bin", FileMode.Append, FileAccess.Write, FileShare.Read))
             using (BinaryWriter sw = new BinaryWriter(fs))
             {
                 foreach (var sample in samples)
                 {
-                    sw.Write((short)sample); //write 16 bit per sample as configured 
+                    sw.Write((short)sample); 
                 }
             }
         }
@@ -157,7 +156,7 @@ namespace NetSdrClientApp
 
         private void _tcpClient_MessageReceived(object? sender, byte[] e)
         {
-            //TODO: add Unsolicited messages handling here
+          
             if (responseTaskSource != null)
             {
                 responseTaskSource.SetResult(e);
